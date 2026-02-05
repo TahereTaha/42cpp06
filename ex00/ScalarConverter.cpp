@@ -3,6 +3,7 @@
 #include <typeinfo>
 #include <cstddef>
 #include <cctype>
+#include <cstdlib>
 
 //	canonical orthodox form.
 ScalarConverter::ScalarConverter(void)
@@ -178,31 +179,84 @@ static const std::type_info	&identifyType(std::string literal)
 {
 	if (matchFloat(literal))
 		return (type_float);
+
 	if (matchDouble(literal))
 		return (type_double);
+	
 	if (matchInt(literal))
 		return (type_int);
+	
 	if (matchChar(literal))
 		return (type_char);
+	
 	return (type_none);
+}
+
+//	a storage type for storing any of the scalars.
+typedef union {
+	char	_char;
+	int		_int;
+	float	_float;
+	double	_double;
+}	scalar_storage;
+// the long exists here for error handeling purposes.
+
+static char	strToChar(std::string str)
+{
+	return (str[0]);
+}
+
+static int	strToInt(std::string str)
+{
+	return (std::atol(str.c_str()));
+}
+
+static float	strToFloat(std::string str)
+{
+	long	hole_part;
+	long	fractional_part;
+
+	(void) str;
+	return (4);
+}
+
+static double	strToDouble(std::string str)
+{
+	(void)str;
+	return (4);
+}
+
+static scalar_storage	strToScalar(std::string str, const std::type_info &type)
+{
+	scalar_storage	storage;
+	
+	if (type == type_char)
+		storage._char = strToChar(str);
+	
+	if (type == type_int)
+		storage._int = strToInt(str);
+	
+	if (type == type_float)
+		storage._float = strToFloat(str);
+	
+	if (type == type_double)
+		storage._double = strToDouble(str);
+	
+	return (storage);
 }
 
 void	ScalarConverter::convert(std::string literal)
 {
 	const std::type_info	&type = identifyType(literal);
 
-	if (type == type_none)
-		std::cout << "incorrect value." << std::endl;
-	else
-		std::cout << "the type is: " << type.name() << std::endl;
-	if (type == type_char)
-		std::cout << "is a char." << std::endl;
-	if (type == type_int)
-		std::cout << "is a int." << std::endl;
-	if (type == type_float)
-		std::cout << "is a float." << std::endl;
-	if (type == type_double)
-		std::cout << "is a double." << std::endl;
+	scalar_storage	storage = strToScalar(literal, type);
+
+	(void)storage;
+//	char	charVal;
+//	int		intVal;
+//	float	floatVal;
+//	double	doubleVal;
+	
 	std::cout << "the literal is: " << literal << std::endl;
 }
 

@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <cctype>
 #include <cstdlib>
+#include <cmath>
+#include <limits>
 
 //	canonical orthodox form.
 ScalarConverter::ScalarConverter(void)
@@ -201,62 +203,181 @@ typedef union {
 }	scalar_storage;
 // the long exists here for error handeling purposes.
 
-static char	strToChar(std::string str)
-{
-	return (str[0]);
-}
-
-static int	strToInt(std::string str)
-{
-	return (std::atol(str.c_str()));
-}
-
-static float	strToFloat(std::string str)
-{
-	long	hole_part;
-	long	fractional_part;
-
-	(void) str;
-	return (4);
-}
-
-static double	strToDouble(std::string str)
-{
-	(void)str;
-	return (4);
-}
-
 static scalar_storage	strToScalar(std::string str, const std::type_info &type)
 {
 	scalar_storage	storage;
 	
 	if (type == type_char)
-		storage._char = strToChar(str);
+		storage._char = str[0];
 	
 	if (type == type_int)
-		storage._int = strToInt(str);
+		storage._int = std::atoi(str.c_str());
 	
 	if (type == type_float)
-		storage._float = strToFloat(str);
-	
+		storage._float = std::atof(str.c_str());
+
 	if (type == type_double)
-		storage._double = strToDouble(str);
-	
+		storage._double = std::atof(str.c_str());
+
 	return (storage);
+}
+
+static bool	isFinite(scalar_storage scalar, const std::type_info &type)
+{
+	if (type == type_float && std::isfinite(scalar._float))
+		return (true);
+	if (type == type_double && std::isfinite(scalar._double))
+		return (true);
+	if (type == type_int || type == type_char)
+		return (true);
+	return (false);
+}
+
+static bool isWithinLimits(scalar_storage scalar, \
+	const std::type_info &type, \
+	long uper_bound, \
+	long lower_bound)
+{
+	double number;
+	if (type == type_float)
+		number = static_cast<double>(scalar._float);
+	else if (type == type_double)
+		number = scalar._double;
+	else if (type == type_int)
+		number = static_cast<double>(scalar._int);
+	else if (type == type_char)
+		number = static_cast<double>(scalar._char);
+	else
+		number = 0;
+	if (number <= uper_bound && number >= lower_bound)
+		return (true);
+	return (false);
+}
+
+static void	printConversionChar(scalar_storage scalar, const std::type_info &type)
+{
+	std::cout << "char: ";
+	
+	//	check for some non displayable values.
+
+	if (!isFinite(scalar, type))
+	{
+		std::cout << "imposible" << std::endl;
+		return ;
+	}
+	
+	if (!isWithinLimits(scalar, \
+						type, \
+						std::numeric_limits<char>::max(), \
+						std::numeric_limits<char>::min()))
+	{
+		std::cout << "overflow" << std::endl;
+		return ;
+	}
+	
+	//	convent the value to char.
+	char value;
+	if (type == type_char)
+		value = static_cast<char>(scalar._char);
+	if (type == type_int)
+		value = static_cast<char>(scalar._int);
+	if (type == type_float)
+		value = static_cast<char>(scalar._float);
+	if (type == type_double)
+		value = static_cast<char>(scalar._double);
+
+	if (isprint(value))
+		std::cout << "'" << value << "'" << std::endl;
+	else
+		std::cout << "non printable character" << std::endl;
+}
+
+static void	printConversionInt(scalar_storage scalar, const std::type_info &type)
+{
+	std::cout << "int: ";
+	
+	//	check for some non displayable values.
+
+	if (!isFinite(scalar, type))
+	{
+		std::cout << "imposible" << std::endl;
+		return ;
+	}
+
+	if (!isWithinLimits(scalar, \
+						type, \
+						std::numeric_limits<int>::max(), \
+						std::numeric_limits<int>::min()))
+	{
+		std::cout << "overflow" << std::endl;
+		return ;
+	}
+
+	//	convent the value to char.
+	int value;
+	if (type == type_char)
+		value = static_cast<int>(scalar._char);
+	if (type == type_int)
+		value = static_cast<int>(scalar._int);
+	if (type == type_float)
+		value = static_cast<int>(scalar._float);
+	if (type == type_double)
+		value = static_cast<int>(scalar._double);
+
+	std::cout << value << std::endl;
+}
+
+static void	printConversionFloat(scalar_storage scalar, const std::type_info &type)
+{
+	std::cout << "float: ";
+	
+	//	convent the value to char.
+	float value;
+	if (type == type_char)
+		value = static_cast<float>(scalar._char);
+	if (type == type_int)
+		value = static_cast<float>(scalar._int);
+	if (type == type_float)
+		value = static_cast<float>(scalar._float);
+	if (type == type_double)
+		value = static_cast<float>(scalar._double);
+
+	std::cout << value << std::endl;
+}
+
+static void	printConversionDouble(scalar_storage scalar, const std::type_info &type)
+{
+	std::cout << "double: ";
+	
+	//	convent the value to char.
+	double value;
+	if (type == type_char)
+		value = static_cast<double>(scalar._char);
+	if (type == type_int)
+		value = static_cast<double>(scalar._int);
+	if (type == type_float)
+		value = static_cast<double>(scalar._float);
+	if (type == type_double)
+		value = static_cast<double>(scalar._double);
+
+	std::cout << value << std::endl;
 }
 
 void	ScalarConverter::convert(std::string literal)
 {
 	const std::type_info	&type = identifyType(literal);
-
-	scalar_storage	storage = strToScalar(literal, type);
-
-	(void)storage;
-//	char	charVal;
-//	int		intVal;
-//	float	floatVal;
-//	double	doubleVal;
 	
-	std::cout << "the literal is: " << literal << std::endl;
+	if (type == type_none)
+	{
+		std::cout << "malformed literal." << std::endl;
+		return ;
+	}
+
+	scalar_storage	scalar = strToScalar(literal, type);
+
+	printConversionChar(scalar, type);
+	printConversionInt(scalar, type);
+	printConversionFloat(scalar, type);
+	printConversionDouble(scalar, type);
 }
 
